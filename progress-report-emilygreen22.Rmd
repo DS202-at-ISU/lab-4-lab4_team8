@@ -1,1 +1,48 @@
 # Progress Report Emily Green 
+
+```{r}
+library(rvest)
+library(dplyr)
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+
+head(tables)
+
+# column names 
+write.csv(tables[[1]], "temp.csv", row.names=FALSE)
+backin <- readr::read_csv("temp.csv", skip = 1, show_col_types =FALSE)
+head(backin, 3)
+
+# changing vote column 
+backin$`%vote` <- as.numeric(gsub("%", "", backin$`%vote`))
+df <- rename(backin, Vote = `%vote`)
+
+# fix trailing decimals in vote 
+df$Vote <- gsub(".0", "", df$Vote)
+
+# changing YoB column 
+df$YoB <- as.numeric(gsub("st|nd|rd|th", "", df$YoB))
+
+
+# fix name column 
+df$Name <- gsub("X-", "", df$Name)
+
+print(df)
+
+colnames
+
+# Other 
+
+x1 <- data.frame(id=1:2, name=c("A", "B"))
+x2 <- data.frame(id=3:4, name=c("C", "D"))
+
+dframe <- rbind(x1, x2)
+
+readr::write_csv(dframe, file="some-other-file.csv")
+```
+
+
+
+
+
