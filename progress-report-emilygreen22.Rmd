@@ -1,4 +1,11 @@
-# Progress Report Emily Green 
+---
+title: "Progress Report"
+author: "Emily Green"
+date: "2024-04-17"
+output: html_document
+---
+
+
 
 ```{r}
 library(rvest)
@@ -27,19 +34,21 @@ df$YoB <- as.numeric(gsub("st|nd|rd|th", "", df$YoB))
 
 # fix name column 
 df$Name <- gsub("X-", "", df$Name)
+df$Name <- gsub("HOF", "", df$Name)
 
-print(df)
+# Merge G columns
+merge_and_swap <- function(G...31, G...13) {
+  merged <- ifelse(is.na(G...31), G...13, G...31)
+  return(merged)
+}
 
-colnames
+df$G <- merge_and_swap(df$G...31, df$G...13)
 
-# Other 
+df <- subset(df, select = -G...31)
+df <- subset(df, select = -G...13)
 
-x1 <- data.frame(id=1:2, name=c("A", "B"))
-x2 <- data.frame(id=3:4, name=c("C", "D"))
-
-dframe <- rbind(x1, x2)
-
-readr::write_csv(dframe, file="some-other-file.csv")
+# create file 
+readr::write_csv(df, file="Lab4.csv")
 ```
 
 
