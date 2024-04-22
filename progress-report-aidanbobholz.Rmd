@@ -9,3 +9,54 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{R}
+
+library(Lahman)
+head(HallOfFame, 3)
+
+```
+
+```{R}
+
+library(dplyr)
+library(rvest)
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+
+
+head(tables)
+
+```
+
+
+
+```{R}
+
+write.csv(tables[[1]], "temp_aidan.csv", row.names=FALSE)
+backin <- readr::read_csv("temp_aidan.csv", skip = 1, show_col_types =FALSE)
+
+
+backin$Name <- gsub("X-", "", backin$Name)
+backin$Name <- gsub("HOF", "", backin$Name)
+
+head(backin)
+
+
+
+```
+
+```{R}
+
+backin$YoB <- as.numeric(gsub("st|nd|rd|th", "", backin$YoB))
+backin$`%vote` <- as.numeric(gsub("%", "", backin$`%vote`))
+
+backin <- rename(backin, Vote = `%vote`)
+
+```
+
+```{R}
+
+readr::write_csv(backin, file="Lab4_Aidan.csv")
+
+```
