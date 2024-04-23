@@ -1,0 +1,76 @@
+---
+title: "Progress Report"
+author: "Mohamed Bashier"
+date: "2024-04-17"
+output: html_document
+---
+
+```{r}
+library(rvest)
+library(Lahman)
+library(dplyr)
+library(tidyverse)
+library(bit)
+library(ggplot2)
+URL <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+html <- read_html(URL)
+tables <- html_table(html)
+
+head(tables[[1]], 3)
+
+write.csv(tables[[1]], "temp.csv", row.names=FALSE)
+backin <- readr::read_csv("temp.csv", skip = 1, show_col_types =FALSE)
+head(backin, 3)
+
+backin$inducted <- ifelse(grepl("HOF", backin$Name), "Y", "N")
+backin$Name <- gsub("X-|HOF", "", backin$Name)
+
+backin$YoB <- as.numeric(gsub("st|nd|rd|th", "", backin$YoB))
+backin$`%vote` <- as.numeric(gsub("%", "", backin$`%vote`))
+
+merge_G <- function(G1, G2) {
+  ifelse(is.na(G1), G2, G1)
+}
+backin$G <- merge_G(backin$G...31, backin$G...13)
+backin <- backin[, !(names(backin) %in% c("G...31", "G...13"))]
+backin$yearID <- 2023
+
+names(backin)[names(backin) == "%vote"] <- "Vote"
+names(backin)[names(backin) == "Name"] <- "playerID"
+names(backin)[names(backin) == "Votes"] <- "votes"
+
+
+names(backin)[names(backin) == "ColumnNameInBackin"] <- "ColumnNameInHallOfFame"
+
+
+missing_columns <- setdiff(names(HallOfFame), names(backin))
+for(col in missing_columns) {
+  backin[[col]] <- NA  
+}
+
+
+extra_columns <- setdiff(names(backin), names(HallOfFame))
+backin <- backin[, !names(backin) %in% extra_columns]
+
+
+backin <- backin[, names(HallOfFame)]
+
+
+combined <- rbind(backin, HallOfFame)
+
+head(combined)
+
+
+write.csv(combined, file="temp.csv", row.names = FALSE)
+
+ggplot(combined, aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2023))
+
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2022))
+```
+
+This code scrapes the 2023 Hall of Fame voting data, and then cleans it. In the code, the Hall of Fame data merges with an existing dataset from the Lahman package. Finally, it visualizes the combined data to show the trend of Hall of Fame inductions over the years.
