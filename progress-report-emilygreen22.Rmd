@@ -10,47 +10,103 @@ output: html_document
 ```{r}
 library(rvest)
 library(dplyr)
+library(tidyverse)
+library(Lahman)
+
+# read in 
 url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
 html <- read_html(url)
 tables <- html_table(html)
 
-head(tables)
+url2 <- "http://bbref.com/pi/shareit/eaTt5"
+html2 <- read_html(url2)
+tables2 <- html_table(html2)
+
 
 # column names 
 write.csv(tables[[1]], "temp.csv", row.names=FALSE)
 backin <- readr::read_csv("temp.csv", skip = 1, show_col_types =FALSE)
-head(backin, 3)
 
-# changing vote column 
-backin$`%vote` <- as.numeric(gsub("%", "", backin$`%vote`))
-df <- rename(backin, Vote = `%vote`)
+write.csv(tables2[[1]], "temp2.csv", row.names=FALSE)
+backin2 <- readr::read_csv("temp2.csv", skip = 1, show_col_types =FALSE)
 
-# fix trailing decimals in vote 
-df$Vote <- gsub(".0", "", df$Vote)
+# merge columns 
 
-# changing YoB column 
-df$YoB <- as.numeric(gsub("st|nd|rd|th", "", df$YoB))
+backin2$Votes <- NA
 
+backin_columns <- colnames(backin)
+backin2_columns <- colnames(backin2)
+
+
+backin2 <- backin2[, names(backin2) %in% backin_columns]
+backin <- backin[, names(backin) %in% backin2_columns]
+
+df <- rbind(backin, backin2)
+
+colnames(df) 
 
 # fix name column 
 df$Name <- gsub("X-", "", df$Name)
 df$Name <- gsub("HOF", "", df$Name)
 
-# Merge G columns
-merge_and_swap <- function(G...31, G...13) {
-  merged <- ifelse(is.na(G...31), G...13, G...31)
-  return(merged)
-}
+# create inducted column
+df$inducted <- ifelse(df$Votes >= 292 | is.na(df$Votes), "Y", "N")
 
-df$G <- merge_and_swap(df$G...31, df$G...13)
+# create yearID column 
+df$yearID <- 2023
 
-df <- subset(df, select = -G...31)
-df <- subset(df, select = -G...13)
+# create votedBy column 
+df$votedBy <- ifelse(df$Name == "Fred McGriff", "Contemporary Era", "BBWAA")
+
+# create ballots column 
+df$ballots <- 389
+
+# create needed column 
+df$needed <- 292
+
+# fix vote column 
+df$votes <- df$Votes
+
+df <- subset(df, select = -Votes)
+
+# create category column 
+df$category <- "Player" 
+
+# create needed_note column 
+df$needed_note <- NA
+
+
+# create playerID column
+hof <- HallOfFame
+
+df$playerID <- c("rolensc", "heltoto", "wagnebi", "jonesan", "sheffga", "beltrca", "kentje", "rodrial", "ramirma", "vizquom", "pettian", "breubo", "rolliji", "buehrma", "rodrifr", "hunterto", "streethu", "arroybr", "napolmi", "lackejo", "dickeyr", "peraljh", "ardyj", "ethiean", "ellsbja", "cainma", "weaveje", "werthja", "mcgrifr")
+
+hof$check <- substr(hof$playerID, 1, nchar(hof$playerID) - 2)
+
+subset(hof, check == "mcgrifr")
+
+
+df$playerID <- c("rolensc01", "heltoto01", "wagnebi02", "jonesan01", "sheffga01", "beltrca01", "kentje01", "rodrial01", "ramirma02", "vizquom01", "pettian01", "breubo01", "rolliji01", "buehrma01", "rodrifr01", "hunterto01", "streethu01", "arroybr01", "napolmi01", "lackejo01", "dickeyr01", "peraljh01", "ardyj01", "ethiean01", "ellsbja01", "cainma01", "weaveje01", "werthja01", "mcgrifr")
+
+# drop extra columns
+df <- subset(df, select = c(playerID, yearID, votedBy, ballots, needed, votes, inducted, category, needed_note))
+
+colnames(hof)
+
+# combine 
+df <- rbind(HallOfFame, df)
+
+subset(df, yearID == 2023)
 
 # create file 
-readr::write_csv(df, file="Lab4.csv")
-```
+readr::write_csv(df, file="HallofFame.csv")
 
+
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2022))
+```
 
 
 
