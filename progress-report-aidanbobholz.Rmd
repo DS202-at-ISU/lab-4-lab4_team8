@@ -38,8 +38,8 @@ backin <- readr::read_csv("temp_aidan.csv", skip = 1, show_col_types =FALSE)
 
 backin <- backin %>%
   mutate(inducted = case_when(
-    grepl("HOF", Name) ~ "Yes",
-    TRUE ~ "No"
+    grepl("HOF", Name) ~ "Y",
+    TRUE ~ "N"
   ))
 
 backin$Name <- gsub("X-", "", backin$Name)
@@ -97,16 +97,18 @@ head(merged)
 
 ```{R}
 
-readr::write_csv(backin, file="Lab4_Aidan.csv")
+readr::write_csv(merged, file="lab-4-aidan.csv")
 
 ```
+
 
 ```{R}
 library(tidyverse)
 
-HallOfFame %>% 
+merged %>% 
   ggplot(aes(x = yearID, fill = inducted)) +
   geom_bar() +
-  xlim(c(1936, 2022))
+  xlim(c(1936, 2023))
 
 ```
+
