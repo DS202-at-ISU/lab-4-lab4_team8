@@ -1,0 +1,130 @@
+---
+title: "progress-report-belaban.Rmd"
+output: html_document
+date: "2024-04-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Cleaning/scraping data - Bela's attempts 
+## R Markdown
+```{r}
+# Load required libraries
+library(rvest)
+library(dplyr)
+
+# Define the URL of the webpage containing the Hall of Fame voting records
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+
+# Scrape the HTML content from the webpage
+page <- read_html(url)
+
+# Extract the table containing the Hall of Fame voting records
+table <- page %>% html_node("table") %>% html_table(fill = TRUE)
+
+
+# Rename columns to match the structure of HallOfFame dataset
+colnames(table) <- c("playerID", "yearID", "votedBy", "ballots", "needed", "votes", "inducted", "category", "needed_note")
+
+names(table) <- colnames
+
+# Clean the data
+#cleaned_data <- tryCatch({
+ # table %>%
+    # Remove rows with missing values
+  #  na.omit() %>%
+    # Convert necessary columns to appropriate data types
+ #   mutate(
+ #     yearID = as.integer(yearID),
+  #    ballots = as.integer(ballots),
+   #   needed = as.integer(needed),
+    #  votes = as.integer(votes),
+     # inducted = ifelse(inducted == "Y", TRUE, FALSE)
+  #  )
+#}, error = function(e) {
+ # stop("Error: Unable to clean the data. Please check the column names and data types.")
+#})
+
+  #head(cleaned_data)
+
+
+```
+Another attempt at cleaning the data 
+```{r}
+# Scrape Data Section
+
+# Define URLs for scraping
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+url2 <- "http://bbref.com/pi/shareit/eaTt5"
+
+# Scrape HTML content from the first URL
+html <- read_html(url)
+# Extract tables from the HTML content
+tables <- html_table(html)
+
+# Scrape HTML content from the second URL
+html2 <- read_html(url2)
+# Extract tables from the HTML content
+tables2 <- html_table(html2)
+
+# Save the extracted tables as CSV files
+write.csv(tables[[1]], "temp_bela.csv", row.names=FALSE)
+write.csv(tables2[[1]], "temp2_bela.csv", row.names=FALSE)
+
+
+# Clean Data Section
+
+# Read CSV files into data frames
+backin <- readr::read_csv("temp_bela.csv", skip = 1, show_col_types =FALSE)
+backin2 <- readr::read_csv("temp2_bela.csv", skip = 1, show_col_types =FALSE)
+
+# Add a placeholder column for 'Votes' to backin2
+backin2$Votes <- NA
+
+# Match column names between backin and backin2
+backin_columns <- colnames(backin)
+backin2_columns <- colnames(backin2)
+backin2 <- backin2[, names(backin2) %in% backin_columns]
+backin <- backin[, names(backin) %in% backin2_columns]
+
+# Merge the two data frames
+df <- rbind(backin, backin2)
+
+# Rename columns
+colnames(df) 
+
+# Clean column 'Name' by removing prefixes and 'HOF'
+df$Name <- gsub("Ancient-", "", df$Name)
+df$Name <- gsub("HOF", "", df$Name)
+
+# Derive 'inducted' column based on 'Votes'
+df$inducted <- ifelse(df$Votes >= 292 | is.na(df$Votes), "Y", "N")
+
+# Add 'yearID', 'votedBy', 'ballots', 'needed', 'votes', 'category', 'needed_note' columns
+df$yearID <- 2023
+df$votedBy <- ifelse(df$Name == "Fred McGriff", "Contemporary Era", "BBWAA")
+df$ballots <- 389
+df$needed <- 292
+df$votes <- df$Votes
+df <- subset(df, select = -Votes)
+df$category <- "Player" 
+df$needed_note <- NA
+
+# Add 'playerID' column based on player names
+df$playerID <- c("rolensc", "heltoto", "wagnebi", "jonesan", "sheffga", "beltrca", "kentje", "rodrial", "ramirma", "vizquom", "pettian", "breubo", "rolliji", "buehrma", "rodrifr", "hunterto", "streethu", "arroybr", "napolmi", "lackejo", "dickeyr", "peraljh", "ardyj", "ethiean", "ellsbja", "cainma", "weaveje", "werthja", "mcgrifr")
+
+# Drop unnecessary columns
+df <- subset(df, select = c(playerID, yearID, votedBy, ballots, needed, votes, inducted, category, needed_note))
+
+# Combine the cleaned data with existing HallOfFame dataset
+df <- rbind(HallOfFame, df)
+
+# Show the subset of data for year 2023
+subset(df, yearID == 2023)
+
+# Write the cleaned data to a CSV file
+readr::write_csv(df, file="Hall_of_Fame_bela.csv")
+```
+
