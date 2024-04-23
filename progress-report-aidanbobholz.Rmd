@@ -36,9 +36,13 @@ head(tables)
 write.csv(tables[[1]], "temp_aidan.csv", row.names=FALSE)
 backin <- readr::read_csv("temp_aidan.csv", skip = 1, show_col_types =FALSE)
 
+backin <- backin %>%
+  mutate(inducted = case_when(
+    grepl("HOF", Name) ~ "Yes",
+    TRUE ~ "No"
+  ))
 
 backin$Name <- gsub("X-", "", backin$Name)
-backin$Name <- gsub("HOF", "", backin$Name)
 
 head(backin)
 
@@ -51,12 +55,58 @@ head(backin)
 backin$YoB <- as.numeric(gsub("st|nd|rd|th", "", backin$YoB))
 backin$`%vote` <- as.numeric(gsub("%", "", backin$`%vote`))
 
+m_s <- function(G...31, G...13) {
+  merged <- ifelse(is.na(G...31), G...13, G...31)
+  return(merged)
+}
+
+backin$G <- m_s(backin$G...31, backin$G...13)
+backin <- subset(backin, select = -G...31)
+backin <- subset(backin, select = -G...13)
+
+backin$yearID <- 2023
+
+
 backin <- rename(backin, Vote = `%vote`)
 
+
+
+head(backin)
+```
+
+```{R}
+
+backin <- rename(backin, playerID = 'Name')
+backin <- rename(backin, votes = 'Votes')
+
+
+head(backin)
+
+```
+```{R}
+
+x1 <- data.frame(playerID = backin$playerID, votes = backin$votes, inducted = backin$inducted, yearID = backin$yearID)
+
+
+x2 <- data.frame(playerID = HallOfFame$playerID, votes = HallOfFame$votes, inducted = HallOfFame$inducted, yearID = HallOfFame$yearID)
+
+merged <- rbind(x1, x2)
+
+head(merged)
 ```
 
 ```{R}
 
 readr::write_csv(backin, file="Lab4_Aidan.csv")
+
+```
+
+```{R}
+library(tidyverse)
+
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2022))
 
 ```
